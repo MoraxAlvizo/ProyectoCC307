@@ -100,18 +100,27 @@ replace(_,_,[],[]).
 replace(Var,Value,[X|R],[F|Rest]):-
 	functor(X,_,AridadX),
 	AridadX > 0,
-	X =.. [NameX|Args],
+	X =.. [NameX|Args],!,
 	replace(Var,Value,Args,Res),
-	F =..[NameX|Res],
+	F =..[NameX|Res],!,
 	replace(Var,Value,R, Rest)
 	.
 replace(Var, Value, [Var|R],[Value|Rest]):-
-	replace(Var, Value, R,Rest)
+	!,replace(Var, Value, R,Rest)
 	.
 replace(Var, Value, [X|R],[X|Rest]):-
-	replace(Var, Value, R,Rest)
+	!,replace(Var, Value, R,Rest)
 	.
-occursCheck(X,X) :- acyclic_term(X).
+
+occursCheck(X,X).
+occursCheck(X,[H|R]):-
+	occursCheck(X,H);
+	occursCheck(X,R)
+	.
+occursCheck(X,Y) :-
+	Y =.. [_|Args],
+	occursCheck(X, Args)
+	.
 
 unifyRobinson(E, F, UMG):-
 	initTerms(E, F),
@@ -131,26 +140,31 @@ unifyRobinson([Sus|Rest]):-
 	PPD = (Term1, Term2),
 	(
 	    (
+	      isCons(Term1),
+	      isCons(Term2),
+	      !,fail
+	    );
+	    (
 	     isVar(Term1) ,
-	     isCons(Term2),
+	     isCons(Term2),!,
 	     substitute(Term1, Term2, Sus),
 	     unifyRobinson(Rest)
 	    );
 	    (
 	     isVar(Term2) ,
-	     isCons(Term1),
+	     isCons(Term1),!,
 	     substitute(Term2, Term1, Sus),
 	     unifyRobinson(Rest)
 	    );
 	    (
 	     isVar(Term1) ,
-	     isFunc(Term2),
+	     isFunc(Term2),!,
 	     substitute(Term1, Term2, Sus),
 	     unifyRobinson(Rest)
 	    );
 	    (
 	     isVar(Term2) ,
-	     isFunc(Term1),
+	     isFunc(Term1),!,
 	     substitute(Term2, Term1, Sus),
 	     unifyRobinson(Rest)
 	    )
