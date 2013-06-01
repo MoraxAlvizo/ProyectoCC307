@@ -8,13 +8,20 @@ variables([a,b,c,d,e,f,g]).
 funtions([suma/2, resta/1, mult/2, div/2]).
 relations([pow/2, raiz/1]).
 
-isTerm(X):- variables(L),
-	member(X,L)
-        .
-isTerm(X):-
+isVar(X):-
+	variables(L),
+	member(X,L).
+isCons(X):-
 	integer(X);
-	float(X)
+	float(X).
+isFunc(X):-
+	funtions(F),
+	functor(X,Name,Aridad),
+	member(Name/Aridad,F)
 	.
+
+isTerm(X):- isVar(X).
+isTerm(X):- isCons(X).
 isTerm(X):-
 	funtions(F),
 	relations(R),
@@ -48,7 +55,7 @@ isFormula(X):-
 isFormula(X):-
 	(
 	  X = Z ^ Y;
-	X = Z v Y;
+	  X = Z v Y;
 	  X = Z <-> Y;
 	  X = Z ->  Y
 	),
@@ -64,19 +71,21 @@ isFormula(X):-
 primerParDiscordancia(X,Y,PPD):-
 	functor(X,NameX,_),
 	functor(Y,NameY,_),
+
 	NameX \= NameY,
-	PPD = (X,Y)
+	PPD = (X,Y),!
 	.
 primerParDiscordancia(X,Y,PPD):-
 	functor(X,_,AridadX),
 	functor(Y,_,AridadY),
 	AridadX \= AridadY,
-	PPD = (X,Y)
+	PPD = (X,Y),!
 	.
 primerParDiscordancia(X,Y,PPD):-
 	X =.. [_|ArgsX],
 	Y =.. [_|ArgsY],
-	ppdArgs(ArgsX,ArgsY,PPD)
+	ppdArgs(ArgsX,ArgsY,PPD),
+	!
 	.
 
 ppdArgs([X|_],[Y|_], PPD):-
@@ -87,3 +96,92 @@ ppdArgs([_|XR],[_|YR], PPD):-
 	.
 
 %primerParDiscordancia( p(a, f(a) )   , p( a, f(a) ) , PPD ).
+replace(_,_,[],[]).
+replace(Var,Value,[X|R],[F|Rest]):-
+	functor(X,_,AridadX),
+	AridadX > 0,
+	X =.. [NameX|Args],
+	replace(Var,Value,Args,Res),
+	F =..[NameX|Res],
+	replace(Var,Value,R, Rest)
+	.
+replace(Var, Value, [Var|R],[Value|Rest]):-
+	replace(Var, Value, R,Rest)
+	.
+replace(Var, Value, [X|R],[X|Rest]):-
+	replace(Var, Value, R,Rest)
+	.
+occursCheck(X,X) :- acyclic_term(X).
+
+unifyRobinson(E, F, UMG):-
+	initTerms(E, F),
+	unifyRobinson(UMG)
+	.
+unifyRobinson([]):-
+	b_getval(ek, EK),
+	b_getval(fk, FK),
+	write(EK),nl,
+	write(FK),nl,
+	EK == FK
+	.
+unifyRobinson([Sus|Rest]):-
+	b_getval(ek, EK),
+	b_getval(fk, FK),
+	primerParDiscordancia(EK, FK, PPD),
+	PPD = (Term1, Term2),
+	(
+	    (
+	     isVar(Term1) ,
+	     isCons(Term2),
+	     substitute(Term1, Term2, Sus),
+	     unifyRobinson(Rest)
+	    );
+	    (
+	     isVar(Term2) ,
+	     isCons(Term1),
+	     substitute(Term2, Term1, Sus),
+	     unifyRobinson(Rest)
+	    );
+	    (
+	     isVar(Term1) ,
+	     isFunc(Term2),
+	     substitute(Term1, Term2, Sus),
+	     unifyRobinson(Rest)
+	    );
+	    (
+	     isVar(Term2) ,
+	     isFunc(Term1),
+	     substitute(Term2, Term1, Sus),
+	     unifyRobinson(Rest)
+	    )
+
+	)
+	.
+
+initTerms(E, F):-
+	b_setval(ek, E),
+	b_setval(fk, F)
+	.
+
+
+substitute(Var, Cons, Sus):-
+	%get variables
+	b_getval(ek, EK),
+	b_getval(fk, FK),
+	Sus = Var/Cons,
+	EK =.. [HE|RE],
+	replace(Var, Cons, RE, ResulE),
+	EK1 =..[HE|ResulE],
+	b_setval(ek, EK1),
+	FK =.. [HF|RF],
+	replace(Var, Cons, RF, ResulF),
+	FK1 =..[HF|ResulF],
+	b_setval(fk, FK1)
+	.
+
+
+
+
+
+
+
