@@ -112,14 +112,24 @@ replace(Var, Value, [X|R],[X|Rest]):-
 	!,replace(Var, Value, R,Rest)
 	.
 
-occursCheck(X,X).
-occursCheck(X,[H|R]):-
-	occursCheck(X,H);
-	occursCheck(X,R)
+occursCheck(X,Y):-
+	Y =..[_|Args],
+	member(X,Args)
 	.
-occursCheck(X,Y) :-
+occursCheck(X,Y):-
 	Y =.. [_|Args],
-	occursCheck(X, Args)
+	occursCheckArgs(X, Args)
+	.
+occursCheckArgs(_,[]):-fail.
+occursCheckArgs(X,[H|_]):-
+	write('Entro aqui'),
+	functor(H,_,Aridad),
+	Aridad > 0,
+	occursCheck(X,H)
+        .
+
+occursCheckArgs(X,[_|R]):-
+        occursCheckArgs(X,R)
 	.
 
 unifyRobinson(E, F, UMG):-
