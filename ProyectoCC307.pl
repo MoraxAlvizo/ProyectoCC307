@@ -4,9 +4,9 @@
 :-op(500,xfy,v).
 :-op(500,fx,¬).
 
-variables([a,b,c,d,e,f,g]).
-funtions([suma/2, resta/1, mult/2, div/2]).
-relations([pow/2, raiz/1]).
+variables([x,y,z,a,b,c,d,e,f,g]).
+funtions([f/2, g/1, h/2, i/2]).
+relations([w/2, v/1]).
 
 isVar(X):-
 	variables(L),
@@ -122,7 +122,6 @@ occursCheck(X,Y):-
 	.
 occursCheckArgs(_,[]):-fail.
 occursCheckArgs(X,[H|_]):-
-	write('Entro aqui'),
 	functor(H,_,Aridad),
 	Aridad > 0,
 	occursCheck(X,H)
@@ -169,12 +168,14 @@ unifyRobinson([Sus|Rest]):-
 	    (
 	     isVar(Term1) ,
 	     isFunc(Term2),!,
+	     not(occursCheck(Term1, Term2)),
 	     substitute(Term1, Term2, Sus),
 	     unifyRobinson(Rest)
 	    );
 	    (
 	     isVar(Term2) ,
 	     isFunc(Term1),!,
+	     not(occursCheck(Term2, Term1)),
 	     substitute(Term2, Term1, Sus),
 	     unifyRobinson(Rest)
 	    )
