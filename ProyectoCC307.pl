@@ -33,6 +33,7 @@ isTerm(X):-
 	X =.. [_|Parameters],
 	isTerm(Parameters)
 	.
+isTerm([]).
 isTerm([X|R]):-
 	isTerm(X),
 	isTerm(R)
@@ -57,7 +58,7 @@ isFormula(X):-
 	  X = Z ^ Y;
 	  X = Z v Y;
 	  X = Z <-> Y;
-	  X = Z ->  Y
+	  X = Z -> Y
 	),
 	isFormula(Z),
 	isFormula(Y),
